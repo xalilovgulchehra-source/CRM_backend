@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  DONE
+  CANCELLED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  salonName String
+  ownerName String
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clients  Client[]
+  services Service[]
+  bookings Booking[]
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  fullName  String
+  phone     String
+  notes     String?
+  lastVisit DateTime?
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([userId])
+}
+
+model Service {
+  id           Int    @id @default(autoincrement())
+  name         String
+  price        Float
+  durationMins Int
+  userId       Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([userId])
+}
+
+model Booking {
+  id        Int           @id @default(autoincrement())
+  date      DateTime
+  status    BookingStatus @default(PENDING)
+  notes     String?
+  price     Float
+  clientId  Int
+  serviceId Int
+  userId    Int
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([clientId])
+  @@index([serviceId])
+  @@index([date])
+  @@index([status])
+}
