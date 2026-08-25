@@ -25,26 +25,6 @@
     </div>
   </main>
 
-  <div class="modal-overlay" id="booking-modal">
-    <div class="modal">
-      <h2>Zakaz berish</h2>
-      <div id="modal-service-name" style="font-weight:600;color:var(--primary);margin-bottom:16px;font-size:16px;"></div>
-      <div class="form-error" id="booking-error" style="display:none;"></div>
-      <div class="form-group">
-        <label>Sana va vaqt</label>
-        <input type="datetime-local" id="booking-date">
-      </div>
-      <div class="form-group">
-        <label>Izoh (ixtiyoriy)</label>
-        <textarea id="booking-notes" placeholder="Qo'shimcha izoh..."></textarea>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-outline" onclick="closeModal()">Bekor qilish</button>
-        <button class="btn-primary" id="booking-submit" onclick="submitBooking()">Tasdiqlash</button>
-      </div>
-    </div>
-  </div>
-
   <footer class="footer">Salon CRM &copy; 2026</footer>
 
   <script src="app.js"></script>
@@ -54,11 +34,8 @@
     const params = new URLSearchParams(window.location.search);
     const salonId = params.get("id");
     let salonData = null;
-    let selectedService = null;
 
-    if (!salonId) {
-      window.location.href = "index.html";
-    }
+    if (!salonId) window.location.href = "index.html";
 
     async function loadSalon() {
       const infoEl = document.getElementById("salon-info");
@@ -76,13 +53,16 @@
           return;
         }
 
+        const sn = salonData.salonName || salonData.salon_name || "Salon";
+        const on = salonData.ownerName || salonData.owner_name || "";
+
         infoEl.innerHTML = `
           <div class="hero" style="margin-bottom:32px;">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
-              <div class="salon-card-avatar" style="margin:0;">${getInitials(salonData.salonName || salonData.salon_name)}</div>
+              <div class="salon-card-avatar" style="margin:0;">${getInitials(sn)}</div>
               <div>
-                <h1 style="font-size:26px;margin-bottom:4px;">${salonData.salonName || salonData.salon_name || "Salon"}</h1>
-                <p style="opacity:0.8;">&#128100; ${salonData.ownerName || salonData.owner_name || ""}</p>
+                <h1 style="font-size:26px;margin-bottom:4px;">${sn}</h1>
+                <p style="opacity:0.8;">&#128100; ${on}</p>
               </div>
             </div>
             <p>&#128222; ${salonData.phone || ""}</p>
@@ -94,81 +74,25 @@
           return;
         }
 
-        svcEl.innerHTML = `<div class="service-list">${services.map(s => `
+        svcEl.innerHTML = `<div class="service-list">${services.map(s => {
+          const dur = s.durationMins || s.duration_mins;
+          return `
           <div class="service-item">
             <div class="service-info">
               <h3>${s.name}</h3>
               <div class="service-meta">
-                <span>&#9200; ${s.durationMins || s.duration_mins} daqiqa</span>
+                <span>&#9200; ${dur} daqiqa</span>
                 <span>${formatPrice(s.price)}</span>
               </div>
             </div>
-            <button class="btn-primary btn-sm" onclick="openBooking(${s.id}, '${s.name.replace(/'/g, "\\'")}', ${s.price})">Zakaz berish</button>
-          </div>
-        `).join("")}</div>`;
+            <a href="booking.html?salon=${salonId}&service=${s.id}&name=${encodeURIComponent(s.name)}&price=${s.price}&duration=${dur}"
+               class="btn-primary btn-sm">Zakaz berish</a>
+          </div>`;
+        }).join("")}</div>`;
       } catch (e) {
         infoEl.innerHTML = `<div class="empty-state"><h3>Xatolik</h3><p>${e.xato || "Serverga ulanib bo'lmadi"}</p></div>`;
       }
     }
-
-    function openBooking(serviceId, serviceName, price) {
-      if (!isLoggedIn()) {
-        toast("Zakaz berish uchun tizimga kiring", "error");
-        setTimeout(() => window.location.href = "login.html", 500);
-        return;
-      }
-      if (!isCustomer()) {
-        toast("Faqat mijozlar zakaz bera oladi", "error");
-        return;
-      }
-      selectedService = { id: serviceId, name: serviceName, price };
-      document.getElementById("modal-service-name").textContent = `${serviceName} — ${formatPrice(price)}`;
-      document.getElementById("booking-error").style.display = "none";
-      document.getElementById("booking-date").value = "";
-      document.getElementById("booking-notes").value = "";
-      document.getElementById("booking-modal").classList.add("active");
-    }
-
-    function closeModal() {
-      document.getElementById("booking-modal").classList.remove("active");
-    }
-
-    async function submitBooking() {
-      const date = document.getElementById("booking-date").value;
-      const notes = document.getElementById("booking-notes").value;
-      const errEl = document.getElementById("booking-error");
-      const btn = document.getElementById("booking-submit");
-
-      if (!date) {
-        errEl.textContent = "Sanani tanlang";
-        errEl.style.display = "block";
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = "Yuborilmoqda...";
-
-      try {
-        await apiPost(`/api/salons/${salonId}/bookings/`, {
-          serviceId: selectedService.id,
-          date: new Date(date).toISOString(),
-          notes,
-        });
-        closeModal();
-        toast("Zakaz muvaffaqiyatli yuborildi!", "success");
-      } catch (e) {
-        const msg = e.tafsirotlar ? e.tafsirotlar.join(", ") : (e.xato || "Xatolik yuz berdi");
-        errEl.textContent = msg;
-        errEl.style.display = "block";
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Tasdiqlash";
-      }
-    }
-
-    document.getElementById("booking-modal").addEventListener("click", function(e) {
-      if (e.target === this) closeModal();
-    });
 
     loadSalon();
   </script>

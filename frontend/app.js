@@ -127,7 +127,11 @@ function renderHeader(active) {
   let html = `<a href="index.html" class="nav-link ${active === "salons" ? "btn-primary" : ""}">Salonlar</a>`;
 
   if (user) {
-    html += `<a href="account.html" class="nav-link ${active === "account" ? "btn-primary" : ""}">Akkauntim</a>`;
+    if (user.role === "OWNER") {
+      html += `<a href="dashboard.html" class="nav-link ${active === "dashboard" ? "btn-primary" : ""}">Boshqaruv</a>`;
+    } else {
+      html += `<a href="account.html" class="nav-link ${active === "account" ? "btn-primary" : ""}">Akkauntim</a>`;
+    }
     html += `<button class="btn-ghost" onclick="logout()">Chiqish</button>`;
   } else {
     html += `<a href="login.html" class="nav-link">Kirish</a>`;

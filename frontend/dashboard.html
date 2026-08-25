@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salon boshqaruvi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="header-logo">
+      <span>S</span> Salon CRM
+    </a>
+    <nav class="header-nav" id="header-nav"></nav>
+  </header>
+
+  <main class="main">
+    <div id="dashboard-header"></div>
+
+    <div class="stats-row" id="stats-row"></div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-filter="" onclick="filterBookings(this, '')">Barchasi</button>
+      <button class="tab" data-filter="PENDING" onclick="filterBookings(this, 'PENDING')">Kutilmoqda</button>
+      <button class="tab" data-filter="CONFIRMED" onclick="filterBookings(this, 'CONFIRMED')">Tasdiqlangan</button>
+      <button class="tab" data-filter="DONE" onclick="filterBookings(this, 'DONE')">Bajarilgan</button>
+      <button class="tab" data-filter="CANCELLED" onclick="filterBookings(this, 'CANCELLED')">Bekor qilindi</button>
+    </div>
+
+    <div id="bookings-container">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="sms-modal">
+    <div class="modal">
+      <h2>&#128172; SMS yozish</h2>
+      <div id="sms-customer-info" style="margin-bottom:16px;color:var(--text-light);font-size:14px;"></div>
+      <div class="form-group">
+        <label>Xabar matni</label>
+        <textarea id="sms-text" placeholder="Xabar yozing..." rows="4"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="closeSmsModal()">Bekor qilish</button>
+        <a id="sms-link" href="#" target="_blank" class="btn-primary" style="text-align:center;padding:12px;border-radius:var(--radius-sm);font-size:15px;font-weight:600;flex:1;display:flex;align-items:center;justify-content:center;" onclick="closeSmsModal()">SMS yuborish</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">Salon CRM &copy; 2026</footer>
+
+  <script src="app.js"></script>
+  <script>
+    renderHeader("dashboard");
+
+    if (!requireAuth() || !isOwner()) {
+      document.getElementById("bookings-container").innerHTML = "";
+    } else {
+      loadDashboard();
+    }
+
+    let allBookings = [];
+    let currentFilter = "";
+
+    async function loadDashboard() {
+      const user = getUser();
+      const headerEl = document.getElementById("dashboard-header");
+      const statsEl = document.getElementById("stats-row");
+      const container = document.getElementById("bookings-container");
+
+      headerEl.innerHTML = `
+        <div class="account-header" style="margin-bottom:24px;">
+          <div class="account-avatar">${getInitials(user.salonName || user.salon_name || user.fullName)}</div>
+          <div class="account-info">
+            <h2>${user.salonName || user.salon_name || "Salon"}</h2>
+            <p>&#128100; ${user.ownerName || user.owner_name || ""}</p>
+            <p>&#128222; ${user.phone || ""}</p>
+          </div>
+        </div>`;
+
+      try {
+        const stats = await apiGet("/api/dashboard/stats/");
+        statsEl.innerHTML = `
+          <div class="stat-card">
+            <div class="stat-number">${stats.totalBookings || 0}</div>
+            <div class="stat-label">Jami zakazlar</div>
+          </div>
+          <div class="stat-card stat-card-accent">
+            <div class="stat-number">${stats.todayBookings || 0}</div>
+            <div class="stat-label">Bugun</div>
+          </div>
+          <div class="stat-card stat-card-success">
+            <div class="stat-number">${stats.totalClients || 0}</div>
+            <div class="stat-label">Mijozlar</div>
+          </div>
+          <div class="stat-card stat-card-warning">
+            <div class="stat-number">${stats.totalServices || 0}</div>
+            <div class="stat-label">Xizmatlar</div>
+          </div>`;
+      } catch (e) {}
+
+      try {
+        const data = await apiGet("/api/bookings/");
+        allBookings = data.navbatlar || [];
+        renderBookings(allBookings);
+      } catch (e) {
+        container.innerHTML = `<div class="empty-state"><h3>Xatolik</h3><p>${e.xato || "Ma'lumotlarni yuklashda xatolik"}</p></div>`;
+      }
+    }
+
+    function renderBookings(bookings) {
+      const container = document.getElementById("bookings-container");
+      if (bookings.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">&#128197;</div>
+            <h3>Zakazlar topilmadi</h3>
+            <p>Hozircha zakazlar yo'q</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = bookings.map(b => {
+        const client = b.client || {};
+        const service = b.service || {};
+        const phone = client.phone || "";
+        const clientName = client.fullName || client.full_name || "Noma'lum";
+        const serviceName = service.name || "Xizmat yo'q";
+        const duration = service.durationMins || service.duration_mins || "?";
+
+        return `
+          <div class="booking-card" id="booking-${b.id}">
+            <div class="booking-header">
+              <div style="flex:1;">
+                <div class="booking-salon">${serviceName}</div>
+                <div class="booking-meta-row">
+                  <span class="booking-customer-name">&#128100; ${clientName}</span>
+                  ${phone ? `<a href="sms:${phone}" class="sms-btn" onclick="openSmsModal(event, '${clientName}', '${phone}')">&#128172; SMS</a>` : ""}
+                </div>
+              </div>
+              <div style="text-align:right;">
+                ${statusBadge(b.status)}
+                <div style="font-size:13px;color:var(--text-light);margin-top:4px;">${formatDate(b.date)}</div>
+              </div>
+            </div>
+            <div class="booking-details">
+              <span>&#9200; ${duration} daqiqa</span>
+              <span>&#128176; ${formatPrice(b.price)}</span>
+              ${phone ? `<span>&#128222; ${phone}</span>` : ""}
+            </div>
+            ${b.notes ? `<p style="margin-top:8px;color:var(--text-light);font-size:13px;">&#128221; ${b.notes}</p>` : ""}
+
+            <div class="booking-actions">
+              ${b.status === "PENDING" ? `
+                <button class="btn-accent btn-sm" onclick="updateStatus(${b.id}, 'CONFIRMED')">&#10003; Tasdiqlash</button>
+                <button class="btn-sm" style="background:var(--danger);color:#fff;" onclick="updateStatus(${b.id}, 'CANCELLED')">&#10005; Bekor qilish</button>
+              ` : ""}
+              ${b.status === "CONFIRMED" ? `
+                <button class="btn-sm" style="background:var(--success);color:#fff;" onclick="updateStatus(${b.id}, 'DONE')">&#9989; Bajarildi</button>
+              ` : ""}
+              ${b.status === "PENDING" || b.status === "CONFIRMED" ? `
+                <button class="btn-sm btn-outline" onclick="autoComplete(${b.id}, '${service.durationMins || service.duration_mins || 30}')">&#9200; Avto-tugatish</button>
+              ` : ""}
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function filterBookings(el, filter) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      el.classList.add("active");
+      currentFilter = filter;
+      const filtered = filter ? allBookings.filter(b => b.status === filter) : allBookings;
+      renderBookings(filtered);
+    }
+
+    async function updateStatus(bookingId, newStatus) {
+      try {
+        await apiPut(`/api/bookings/${bookingId}/`, { status: newStatus });
+        const b = allBookings.find(x => x.id === bookingId);
+        if (b) b.status = newStatus;
+        renderBookings(currentFilter ? allBookings.filter(x => x.status === currentFilter) : allBookings);
+        toast("Holat yangilandi!", "success");
+      } catch (e) {
+        toast(e.xato || "Xatolik yuz berdi", "error");
+      }
+    }
+
+    function autoComplete(bookingId, durationMins) {
+      const dur = Number(durationMins) || 30;
+      toast(`${dur} daqiqadan keyin tugatiladi...`, "info");
+      setTimeout(async () => {
+        await updateStatus(bookingId, "DONE");
+        toast("Zakaz avtomatik tugatildi!", "success");
+      }, dur * 1000);
+    }
+
+    let currentSmsPhone = "";
+
+    function openSmsModal(e, name, phone) {
+      e.preventDefault();
+      currentSmsPhone = phone;
+      document.getElementById("sms-customer-info").textContent = `Kompyuter: ${name} | Telefon: ${phone}`;
+      document.getElementById("sms-text").value = "";
+      updateSmsLink();
+      document.getElementById("sms-modal").classList.add("active");
+    }
+
+    function updateSmsLink() {
+      const text = document.getElementById("sms-text").value;
+      const link = document.getElementById("sms-link");
+      link.href = `sms:${currentSmsPhone}?body=${encodeURIComponent(text)}`;
+    }
+
+    function closeSmsModal() {
+      document.getElementById("sms-modal").classList.remove("active");
+    }
+
+    document.getElementById("sms-text").addEventListener("input", updateSmsLink);
+    document.getElementById("sms-modal").addEventListener("click", function(e) {
+      if (e.target === this) closeSmsModal();
+    });
+  </script>
+</body>
+</html>
