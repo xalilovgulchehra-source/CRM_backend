@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Client, Service, Booking
+from .models import User, Client, Service, Booking, ChatMessage
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -250,3 +250,29 @@ class MyBookingSerializer(serializers.ModelSerializer):
             "price",
             "created_at",
         ]
+
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source="sender.full_name", read_only=True)
+    sender_email = serializers.CharField(source="sender.email", read_only=True)
+    sender_role = serializers.CharField(source="sender.role", read_only=True)
+
+    class Meta:
+        model = ChatMessage
+        fields = [
+            "id",
+            "sender",
+            "sender_name",
+            "sender_email",
+            "sender_role",
+            "text",
+            "is_read",
+            "created_at",
+        ]
+        read_only_fields = ["id", "sender", "is_read", "created_at"]
+
+
+class ChatSendSerializer(serializers.Serializer):
+    text = serializers.CharField(
+        error_messages={"blank": "Xabar matni kiritilishi shart"},
+    )

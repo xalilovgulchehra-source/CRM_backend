@@ -146,3 +146,29 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.client.full_name} - {self.date}"
+
+
+class ChatMessage(models.Model):
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.CASCADE,
+        related_name="messages",
+        verbose_name="Navbat",
+    )
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="sent_messages",
+        verbose_name="Yuboruvchi",
+    )
+    text = models.TextField(verbose_name="Xabar matni")
+    is_read = models.BooleanField(default=False, verbose_name="O'qilgan")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yuborilgan vaqt")
+
+    class Meta:
+        verbose_name = "Chat xabari"
+        verbose_name_plural = "Chat xabarlari"
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"{self.sender.email}: {self.text[:50]}"

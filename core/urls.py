@@ -11,6 +11,7 @@ from .views.salons import (
     CustomerBookingCreateView,
     MyBookingsView,
 )
+from .views.chat import ChatView, ChatReadView
 
 urlpatterns = [
     path("auth/register/", RegisterView.as_view(), name="register"),
@@ -35,4 +36,6 @@ urlpatterns = [
         name="customer-booking-create",
     ),
     path("my-bookings/", MyBookingsView.as_view(), name="my-bookings"),
+    path("chat/<int:booking_id>/", ChatView.as_view(), name="chat"),
+    path("chat/<int:booking_id>/read/", ChatReadView.as_view(), name="chat-read"),
 ]
