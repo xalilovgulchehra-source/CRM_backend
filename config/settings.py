@@ -111,9 +111,9 @@ SIMPLE_JWT = {
     "SIGNING_KEY": JWT_SIGNING_KEY,
 }
 
-CORS_ALLOW_ALL_ORIGINS = True  # Временно включите это, чтобы точно проверить связь!
-ORS_ALLOW_CREDENTIALS = True
-
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+    
 
 CORS_ALLOW_METHODS = [
     "DELETE",

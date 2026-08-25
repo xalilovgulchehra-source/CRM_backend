@@ -30,8 +30,11 @@ class RegisterSerializer(serializers.Serializer):
         default=User.Role.OWNER,
     )
     full_name = serializers.CharField(required=False, allow_blank=True, default="")
+    fullName = serializers.CharField(required=False, allow_blank=True, default="", write_only=True)
     salon_name = serializers.CharField(required=False, allow_blank=True, default="")
+    salonName = serializers.CharField(required=False, allow_blank=True, default="", write_only=True)
     owner_name = serializers.CharField(required=False, allow_blank=True, default="")
+    ownerName = serializers.CharField(required=False, allow_blank=True, default="", write_only=True)
     phone = serializers.CharField(
         error_messages={"blank": "Telefon raqami kiritilishi shart"},
     )
@@ -42,6 +45,13 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def validate(self, data):
+        if not data.get("full_name") and data.get("fullName"):
+            data["full_name"] = data["fullName"]
+        if not data.get("salon_name") and data.get("salonName"):
+            data["salon_name"] = data["salonName"]
+        if not data.get("owner_name") and data.get("ownerName"):
+            data["owner_name"] = data["ownerName"]
+
         role = data.get("role", User.Role.OWNER)
         if role == User.Role.OWNER:
             if not data.get("salon_name"):
