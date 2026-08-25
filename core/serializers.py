@@ -213,10 +213,19 @@ class CustomerBookingCreateSerializer(serializers.Serializer):
     service_id = serializers.IntegerField(
         error_messages={"invalid": "Xizmat ID musbat son bo'lishi kerak"},
     )
+    serviceId = serializers.IntegerField(
+        required=False,
+        write_only=True,
+    )
     date = serializers.DateTimeField(
         error_messages={"blank": "Sana kiritilishi shart"},
     )
     notes = serializers.CharField(required=False, allow_blank=True, default=None)
+
+    def validate(self, data):
+        if not data.get("service_id") and data.get("serviceId"):
+            data["service_id"] = data["serviceId"]
+        return data
 
 
 class ServicePublicSerializer(serializers.ModelSerializer):
