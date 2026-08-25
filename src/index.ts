@@ -16,13 +16,24 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
 // CORS
+const allowedOrigins = [
+  "https://crm-frontend-nine-wheat.vercel.app",
+  "https://crm-frontend-manzara.vercel.app",
+  "http://localhost:3001",
+];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3001",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS tomonidan bloklandi"));
+      }
+    },
     credentials: true,
   })
 );
-
 app.use(express.json());
 
 // Health check
