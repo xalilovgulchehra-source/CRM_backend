@@ -1,6 +1,4 @@
 import os
-from dotenv import load_dotenv
-load_dotenv()
 from pathlib import Path
 from datetime import timedelta
 
@@ -60,45 +58,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DATABASE_URL", "salon_crm_db").split("/")[-1]
-        if os.environ.get("DATABASE_URL")
-        else "salon_crm_db",
-        "USER": os.environ.get("DATABASE_URL", "").split("://")[-1].split(":")[0]
-        if "://" in os.environ.get("DATABASE_URL", "")
-        else "",
-        "PASSWORD": os.environ.get("DATABASE_URL", "")
-        .split("://")[-1]
-        .split("@")[0]
-        .split(":")[-1]
-        if "://" in os.environ.get("DATABASE_URL", "")
-        else "",
-        "HOST": os.environ.get("DATABASE_URL", "")
-        .split("@")[-1]
-        .split(":")[0]
-        .split("/")[0]
-        if "@" in os.environ.get("DATABASE_URL", "")
-        else "localhost",
-        "PORT": os.environ.get("DATABASE_URL", "")
-        .split("@")[-1]
-        .split(":")[-1]
-        .split("/")[0]
-        if "@" in os.environ.get("DATABASE_URL", "")
-        and ":" in os.environ.get("DATABASE_URL", "").split("@")[-1]
-        else "5432",
-    }
-}
-
 import dj_database_url
 
-DATABASES["default"] = dj_database_url.config(
-    default=os.environ.get("DATABASE_URL"),
-    conn_max_age=600,
-    conn_health_checks=True,
-    ssl_require=not DEBUG,
-)
+DATABASES = {
+    "default": dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        conn_health_checks=True,
+        ssl_require=not DEBUG,
+    )
+}
 
 AUTH_USER_MODEL = "core.User"
 
@@ -115,6 +84,8 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+JWT_SIGNING_KEY = os.environ.get("JWT_SECRET", SECRET_KEY)
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -137,6 +108,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "ROTATE_REFRESH_TOKENS": False,
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "SIGNING_KEY": JWT_SIGNING_KEY,
 }
 
 CORS_ALLOW_ALL_ORIGINS = False
