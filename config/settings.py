@@ -111,7 +111,31 @@ SIMPLE_JWT = {
     "SIGNING_KEY": JWT_SIGNING_KEY,
 }
 
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True  # Временно включите это, чтобы точно проверить связь!
+ORS_ALLOW_CREDENTIALS = True
+
+
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
 
 FRONTEND_URLS = os.environ.get("FRONTEND_URL", "http://localhost:3001")
 CORS_ALLOWED_ORIGINS = [
@@ -119,6 +143,3 @@ CORS_ALLOWED_ORIGINS = [
     "https://crm-frontend-manzara.vercel.app",     # .env faylingizdagi domen
     "http://localhost:3000",                       # Agar lokalda tekshirsangiz
 ]
-
-
-CORS_ALLOW_CREDENTIALS = True
