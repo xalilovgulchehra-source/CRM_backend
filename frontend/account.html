@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mening akkauntim</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="header-logo">
+      <span>S</span> Salon CRM
+    </a>
+    <nav class="header-nav" id="header-nav"></nav>
+  </header>
+
+  <main class="main">
+    <div id="account-header"></div>
+
+    <h2 class="section-title">&#128197; Mening zakazlarim</h2>
+    <div id="bookings-container">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+
+  <footer class="footer">Salon CRM &copy; 2026</footer>
+
+  <script src="app.js"></script>
+  <script>
+    renderHeader("account");
+
+    if (!requireCustomer()) {
+      document.getElementById("bookings-container").innerHTML = "";
+    } else {
+      loadAccount();
+    }
+
+    async function loadAccount() {
+      const user = getUser();
+      const headerEl = document.getElementById("account-header");
+      const container = document.getElementById("bookings-container");
+
+      headerEl.innerHTML = `
+        <div class="account-header">
+          <div class="account-avatar">${getInitials(user.fullName || user.full_name)}</div>
+          <div class="account-info">
+            <h2>${user.fullName || user.full_name || user.email}</h2>
+            <p>&#128231; ${user.email}</p>
+            <p>&#128222; ${user.phone || ""}</p>
+          </div>
+        </div>`;
+
+      try {
+        const data = await apiGet("/api/my-bookings/");
+        const bookings = data.navbatlar || [];
+
+        if (bookings.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">&#128197;</div>
+              <h3>Hozircha zakazlar yo'q</h3>
+              <p>Salonlarni ko'rib, birinchi zakazingizni bering!</p>
+              <a href="index.html" class="btn-primary" style="display:inline-block;padding:12px 24px;border-radius:var(--radius-sm);">Salonlarni ko'rish</a>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = bookings.map(b => `
+          <div class="booking-card">
+            <div class="booking-header">
+              <div>
+                <div class="booking-salon">${b.salonName || b.salon_name || "Salon"}</div>
+              </div>
+              ${statusBadge(b.status)}
+            </div>
+            <div class="booking-details">
+              <span>&#128736; ${b.service ? b.service.name : "Xizmat yo'q"}</span>
+              <span>&#128197; ${formatDate(b.date)}</span>
+              <span>&#128176; ${formatPrice(b.price)}</span>
+            </div>
+            ${b.notes ? `<p style="margin-top:8px;color:var(--text-light);font-size:13px;">Izoh: ${b.notes}</p>` : ""}
+          </div>
+        `).join("");
+      } catch (e) {
+        container.innerHTML = `<div class="empty-state"><h3>Xatolik</h3><p>${e.xato || "Ma'lumotlarni yuklashda xatolik"}</p></div>`;
+      }
+    }
+  </script>
+</body>
+</html>

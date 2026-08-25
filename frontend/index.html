@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salonlar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="header-logo">
+      <span>S</span> Salon CRM
+    </a>
+    <nav class="header-nav" id="header-nav"></nav>
+  </header>
+
+  <main class="main">
+    <div class="hero">
+      <h1>Salom! Bizning salonlarni kashf eting</h1>
+      <p>Sizga eng yaqin go'zallik salonini toping va bir zumda zakaz bering.</p>
+    </div>
+
+    <h2 class="section-title">Barcha salonlar</h2>
+
+    <div id="salons-container">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+
+  <footer class="footer">Salon CRM &copy; 2026</footer>
+
+  <script src="app.js"></script>
+  <script>
+    renderHeader("salons");
+
+    async function loadSalons() {
+      const container = document.getElementById("salons-container");
+      try {
+        const data = await apiGet("/api/salons/");
+        const salons = data.salonlar || [];
+
+        if (salons.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">&#127881;</div>
+              <h3>Hozircha salonlar yo'q</h3>
+              <p>Birinchi salon ro'yxatdan o'tishi kutilmoqda</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = `<div class="cards-grid">${salons.map(s => `
+          <div class="salon-card" onclick="window.location.href='salon.html?id=${s.id}'">
+            <div class="salon-card-avatar">${getInitials(s.salonName || s.salon_name)}</div>
+            <div class="salon-card-name">${s.salonName || s.salon_name || "Salon"}</div>
+            <div class="salon-card-info">
+              <span>&#128100; ${s.ownerName || s.owner_name || ""}</span>
+              <span>&#128222; ${s.phone || ""}</span>
+            </div>
+            <div class="salon-card-actions">
+              <button class="btn-primary btn-sm btn-block">Xizmatlarni ko'rish</button>
+            </div>
+          </div>
+        `).join("")}</div>`;
+      } catch (e) {
+        container.innerHTML = `<div class="empty-state"><h3>Xatolik yuz berdi</h3><p>${e.xato || "Serverga ulanib bo'lmadi"}</p></div>`;
+      }
+    }
+
+    loadSalons();
+  </script>
+</body>
+</html>
