@@ -115,7 +115,10 @@ CORS_ALLOW_ALL_ORIGINS = False
 
 FRONTEND_URLS = os.environ.get("FRONTEND_URL", "http://localhost:3001")
 CORS_ALLOWED_ORIGINS = [
-    url.strip() for url in FRONTEND_URLS.split(",") if url.strip()
+    "https://crm-frontend-nine-wheat.vercel.app",  # Brauzer xato berayotgan domen
+    "https://crm-frontend-manzara.vercel.app",     # .env faylingizdagi domen
+    "http://localhost:3000",                       # Agar lokalda tekshirsangiz
 ]
+
 
 CORS_ALLOW_CREDENTIALS = True
