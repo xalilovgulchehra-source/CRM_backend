@@ -5,7 +5,16 @@ from .models import User, Client, Service, Booking
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "salon_name", "owner_name", "phone", "created_at"]
+        fields = [
+            "id",
+            "email",
+            "role",
+            "full_name",
+            "salon_name",
+            "owner_name",
+            "phone",
+            "created_at",
+        ]
         read_only_fields = ["id", "created_at"]
 
 
@@ -15,12 +24,14 @@ class RegisterSerializer(serializers.Serializer):
         min_length=6,
         error_messages={"blank": "Parol kiritilishi shart"},
     )
-    salon_name = serializers.CharField(
-        error_messages={"blank": "Salon nomi kiritilishi shart"},
+    role = serializers.ChoiceField(
+        choices=User.Role.choices,
+        required=False,
+        default=User.Role.OWNER,
     )
-    owner_name = serializers.CharField(
-        error_messages={"blank": "Egasi ismi kiritilishi shart"},
-    )
+    full_name = serializers.CharField(required=False, allow_blank=True, default="")
+    salon_name = serializers.CharField(required=False, allow_blank=True, default="")
+    owner_name = serializers.CharField(required=False, allow_blank=True, default="")
     phone = serializers.CharField(
         error_messages={"blank": "Telefon raqami kiritilishi shart"},
     )
@@ -30,10 +41,34 @@ class RegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError("Bu email allaqachon ro'yxatdan o'tgan")
         return value
 
+    def validate(self, data):
+        role = data.get("role", User.Role.OWNER)
+        if role == User.Role.OWNER:
+            if not data.get("salon_name"):
+                raise serializers.ValidationError(
+                    {"salonName": "Salon nomi kiritilishi shart"}
+                )
+            if not data.get("owner_name"):
+                raise serializers.ValidationError(
+                    {"ownerName": "Egasi ismi kiritilishi shart"}
+                )
+        elif role == User.Role.CUSTOMER:
+            if not data.get("full_name"):
+                raise serializers.ValidationError(
+                    {"fullName": "To'liq ism kiritilishi shart"}
+                )
+        return data
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
+
+
+class SalonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "salon_name", "owner_name", "phone"]
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -162,3 +197,37 @@ class BookingUpdateSerializer(serializers.Serializer):
     price = serializers.IntegerField(required=False)
     client_id = serializers.IntegerField(required=False)
     service_id = serializers.IntegerField(required=False, allow_null=True, default=None)
+
+
+class CustomerBookingCreateSerializer(serializers.Serializer):
+    service_id = serializers.IntegerField(
+        error_messages={"invalid": "Xizmat ID musbat son bo'lishi kerak"},
+    )
+    date = serializers.DateTimeField(
+        error_messages={"blank": "Sana kiritilishi shart"},
+    )
+    notes = serializers.CharField(required=False, allow_blank=True, default=None)
+
+
+class ServicePublicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
+        fields = ["id", "name", "price", "duration_mins"]
+
+
+class MyBookingSerializer(serializers.ModelSerializer):
+    service = ServicePublicSerializer(read_only=True)
+    salon_name = serializers.CharField(source="user.salon_name", read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = [
+            "id",
+            "salon_name",
+            "service",
+            "date",
+            "status",
+            "notes",
+            "price",
+            "created_at",
+        ]

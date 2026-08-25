@@ -6,7 +6,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from ..serializers import (
     RegisterSerializer,
     LoginSerializer,
-    UserSerializer,
 )
 from ..services.auth_service import AuthService
 
@@ -23,8 +22,10 @@ class RegisterView(APIView):
             user = AuthService.register_user(
                 email=data["email"],
                 password=data["password"],
-                salon_name=data["salon_name"],
-                owner_name=data["owner_name"],
+                role=data.get("role", "OWNER"),
+                full_name=data.get("full_name", ""),
+                salon_name=data.get("salon_name", ""),
+                owner_name=data.get("owner_name", ""),
                 phone=data["phone"],
             )
         except ValueError as e:

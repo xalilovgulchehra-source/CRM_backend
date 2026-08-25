@@ -4,10 +4,27 @@ from .managers.user_manager import UserManager
 
 
 class User(AbstractUser):
+    class Role(models.TextChoices):
+        OWNER = "OWNER", "Salon egasi"
+        CUSTOMER = "CUSTOMER", "Mijoz"
+
     username = None
     email = models.EmailField(unique=True, verbose_name="Email")
-    salon_name = models.CharField(max_length=255, verbose_name="Salon nomi")
-    owner_name = models.CharField(max_length=255, verbose_name="Egasi ismi")
+    role = models.CharField(
+        max_length=20,
+        choices=Role.choices,
+        default=Role.OWNER,
+        verbose_name="Rol",
+    )
+    full_name = models.CharField(
+        max_length=255, blank=True, default="", verbose_name="To'liq ism"
+    )
+    salon_name = models.CharField(
+        max_length=255, blank=True, default="", verbose_name="Salon nomi"
+    )
+    owner_name = models.CharField(
+        max_length=255, blank=True, default="", verbose_name="Egasi ismi"
+    )
     phone = models.CharField(max_length=50, verbose_name="Telefon")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -102,6 +119,14 @@ class Booking(models.Model):
         blank=True,
         related_name="bookings",
         verbose_name="Xizmat",
+    )
+    customer = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="customer_bookings",
+        verbose_name="Buyurtma beruvchi mijoz",
     )
     user = models.ForeignKey(
         User,
