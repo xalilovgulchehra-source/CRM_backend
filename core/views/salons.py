@@ -18,7 +18,10 @@ class SalonListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        salons = User.objects.filter(role=User.Role.OWNER).order_by("-created_at")
+        salons = User.objects.filter(
+            role=User.Role.OWNER,
+            salon_name__in=["MySalon", "StyleShop"],
+        ).order_by("-created_at")
         serializer = SalonSerializer(salons, many=True)
         return Response(
             {
